@@ -33,13 +33,10 @@ class Nethack < Formula
     # Symlink makefiles
     system 'sh sys/unix/setup.sh'
 
-    inreplace "include/config.h",
-      /^#\s*define HACKDIR.*$/,
-      "#define HACKDIR \"#{libexec}\""
-
-    inreplace "include/config.h",
-      /^#\s*define COMPRESS\s.*$/,
-      "#define COMPRESS \"/usr/bin/gzip\""
+    inreplace "include/config.h" do |s|
+      s.gsub! /^#\s*define HACKDIR.*$/, "#define HACKDIR \"#{libexec}\""
+      s.gsub! /^#\s*define COMPRESS\s.*$/, "#define COMPRESS \"/usr/bin/gzip\""
+    end
 
     inreplace "include/unixconf.h",
       /^#\s*define VAR_PLAYGROUND.*$/,
@@ -49,7 +46,7 @@ class Nethack < Formula
     system "cd dat;make"
 
     cd 'dat' do
-      %w(perm logfile).each do |f|
+      %w(perm logfile xlogfile livelog).each do |f|
         system "touch", f
         libexec.install f
       end
@@ -73,6 +70,21 @@ class Nethack < Formula
 end
 
 __END__
+diff --git a/include/config.h b/include/config.h
+index 9f653d3..2d2fc83 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -380,8 +380,8 @@ typedef unsigned char	uchar;
+ #define AUTOPICKUP_EXCEPTIONS  /* exceptions to autopickup */
+ 
+ #define DUMP_LOG        /* Dump game end information to a file */
+-#define DUMP_FN "/dgldir/userdata/%N/%n/dumplog/%t.nh343.txt"      /* Fixed dumpfile name, if you want
+-                                   * to prevent definition by users */
++/* #define DUMP_FN "/dgldir/userdata/%N/%n/dumplog/%t.nh343.txt"      /1* Fixed dumpfile name, if you want */
++                                   /* * to prevent definition by users *1/ */
+ #define DUMPMSGS 20     /* Number of latest messages in the dump file  */
+ 
+ #define SHOW_BORN    /* extinct & showborn -patch */
 diff --git a/include/system.h b/include/system.h
 index a4efff9..cfe96f1 100644
 --- a/include/system.h
