@@ -22,8 +22,15 @@ class Nethack < Formula
   # Don't remove save folder
   skip_clean 'libexec/save'
 
+  def options
+    [
+      ['--with-menucolors', "Use the menucolors patch"],
+    ]
+  end
+
   def patches
-    DATA
+    patches = [DATA]
+    patches << 'http://bilious.alt.org/~paxed/nethack/nh343-menucolor.diff' if ARGV.include? '--with-menucolors'
   end
 
   def install
@@ -36,6 +43,12 @@ class Nethack < Formula
     inreplace "include/config.h",
       /^#\s*define HACKDIR.*$/,
       "#define HACKDIR \"#{libexec}\""
+
+    if ARGV.include? '--with-menucolors'
+      inreplace "include/config.h",
+        /^#\s*define MENU_COLOR_REGEX.*$/,
+        "/* #define MENU_COLOR_REGEX */"
+    end
 
     # Make the data first, before we munge the CFLAGS
     system "cd dat;make"
