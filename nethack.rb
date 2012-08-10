@@ -22,15 +22,8 @@ class Nethack < Formula
   # Don't remove save folder
   skip_clean 'libexec/save'
 
-  def options
-    [
-      ['--with-menucolors', "Use the menucolors patch"],
-    ]
-  end
-
   def patches
-    patches = [DATA]
-    patches << 'http://bilious.alt.org/~paxed/nethack/nh343-menucolor.diff' if ARGV.include? '--with-menucolors'
+    ['http://alt.org/nethack/nh343-nao.diff', DATA]
   end
 
   def install
@@ -44,12 +37,13 @@ class Nethack < Formula
       /^#\s*define HACKDIR.*$/,
       "#define HACKDIR \"#{libexec}\""
 
-    if ARGV.include? '--with-menucolors'
+    inreplace "include/config.h",
+      /^#\s*define COMPRESS\s.*$/,
+      "#define COMPRESS \"/usr/bin/gzip\""
 
-      inreplace "include/config.h",
-        /^\/\*#\s*define MENU_COLOR_REGEX_POSIX.*\*\/.*$/,
-        '#define MENU_COLOR_REGEX_POSIX'
-    end
+    inreplace "include/unixconf.h",
+      /^#\s*define VAR_PLAYGROUND.*$/,
+      "#define VAR_PLAYGROUND \"#{libexec}\""
 
     # Make the data first, before we munge the CFLAGS
     system "cd dat;make"
@@ -79,14 +73,6 @@ class Nethack < Formula
 end
 
 __END__
-diff --git a/.gitignore b/.gitignore
-new file mode 100644
-index 0000000..8b2ccd2
---- /dev/null
-+++ b/.gitignore
-@@ -0,0 +1,2 @@
-+*.o
-+*.lev
 diff --git a/include/system.h b/include/system.h
 index a4efff9..cfe96f1 100644
 --- a/include/system.h
@@ -145,10 +131,10 @@ index a4efff9..cfe96f1 100644
  # else
  E long FDECL(time, (time_t *));
 diff --git a/include/unixconf.h b/include/unixconf.h
-index fe1b006..3a195a6 100644
+index f7cdcf7..d39d329 100644
 --- a/include/unixconf.h
 +++ b/include/unixconf.h
-@@ -19,20 +19,20 @@
+@@ -19,13 +19,13 @@
   */
  
  /* define exactly one of the following four choices */
@@ -164,15 +150,7 @@ index fe1b006..3a195a6 100644
  			/* of Linux */
  /* #define HPUX */	/* Hewlett-Packard's Unix, version 6.5 or higher */
  			/* use SYSV for < v6.5 */
- 
- 
- /* define any of the following that are appropriate */
--#define SVR4		/* use in addition to SYSV for System V Release 4 */
-+/* #define SVR4 */		/* use in addition to SYSV for System V Release 4 */
- 			/* including Solaris 2+ */
- #define NETWORK		/* if running on a networked system */
- 			/* e.g. Suns sharing a playground through NFS */
-@@ -285,8 +285,8 @@
+@@ -291,8 +291,8 @@
  
  #if defined(BSD) || defined(ULTRIX)
  # if !defined(DGUX) && !defined(SUNOS4)
@@ -184,36 +162,34 @@ index fe1b006..3a195a6 100644
  # ifdef SUNOS4
  #include <memory.h>
 diff --git a/sys/unix/Makefile.src b/sys/unix/Makefile.src
-index 29ad99a..7842af2 100644
+index ab56b76..9fc82bd 100644
 --- a/sys/unix/Makefile.src
 +++ b/sys/unix/Makefile.src
 @@ -151,8 +151,8 @@ GNOMEINC=-I/usr/lib/glib/include -I/usr/lib/gnome-libs/include -I../win/gnome
  # flags for debugging:
  # CFLAGS = -g -I../include
  
--CFLAGS = -O -I../include
--LFLAGS = 
+-CFLAGS = -g -O -I../include
+-LFLAGS =
 +#CFLAGS = -O -I../include
-+#LFLAGS = 
++#LFLAGS =
  
  # The Qt and Be window systems are written in C++, while the rest of
  # NetHack is standard C.  If using Qt, uncomment the LINK line here to get
-@@ -230,8 +230,8 @@ WINOBJ = $(WINTTYOBJ)
- # WINTTYLIB = -ltermcap
- # WINTTYLIB = -lcurses
- # WINTTYLIB = -lcurses16
--# WINTTYLIB = -lncurses
--WINTTYLIB = -ltermlib
-+WINTTYLIB = -lncurses
-+#WINTTYLIB = -ltermlib
- #
- # libraries for X11
- # If USE_XPM is defined in config.h, you will also need -lXpm here.
+@@ -293,7 +293,7 @@ WINLIB = $(WINTTYLIB)
+ LIBS =
+ 
+ # make NetHack
+-GAME     = nethack.343-nao
++GAME     = nethack
+ # GAME     = nethack.prg
+ 
+ # if you defined RANDOM in unixconf.h/tosconf.h since your system did not come
 diff --git a/win/tty/termcap.c b/win/tty/termcap.c
-index 706e203..dadc9a9 100644
+index a65a1d1..31b36c8 100644
 --- a/win/tty/termcap.c
 +++ b/win/tty/termcap.c
-@@ -835,7 +835,7 @@ cl_eos()			/* free after Robert Viduya */
+@@ -836,7 +836,7 @@ cl_eos()			/* free after Robert Viduya */
  
  #include <curses.h>
  
@@ -221,3 +197,4 @@ index 706e203..dadc9a9 100644
 +#if !defined(LINUX) && !defined(__APPLE__)
  extern char *tparm();
  #endif
+ 
