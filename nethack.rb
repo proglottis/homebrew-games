@@ -45,9 +45,10 @@ class Nethack < Formula
       "#define HACKDIR \"#{libexec}\""
 
     if ARGV.include? '--with-menucolors'
+
       inreplace "include/config.h",
-        /^#\s*define MENU_COLOR_REGEX.*$/,
-        "/* #define MENU_COLOR_REGEX */"
+        /^\/\*#\s*define MENU_COLOR_REGEX_POSIX.*\*\/.*$/,
+        '#define MENU_COLOR_REGEX_POSIX'
     end
 
     # Make the data first, before we munge the CFLAGS
